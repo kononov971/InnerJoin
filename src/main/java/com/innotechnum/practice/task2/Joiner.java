@@ -18,7 +18,7 @@ public class Joiner {
     }
 
     public static void innerJoinWithArrayList(String file1, String file2) {
-        if ((elementsInArrayList1 = IOElements.readInArrayList(file1)).isEmpty())  {
+        if ((elementsInArrayList1 = IOElements.readInArrayList(file1)).isEmpty()) {
             System.out.println("Данные в файле - " + file1 + " некорректны");
             return;
         } else if ((elementsInArrayList2 = IOElements.readInArrayList(file2)).isEmpty()) {
@@ -51,18 +51,46 @@ public class Joiner {
             passElements(elementsInArrayList2, elementsInLinkedList2);
         }
 
-        System.out.println("Результат соединения отсортированне LinkedList");
+        System.out.println("Результат соединения отсортированный LinkedList");
         IOElements.printElements(innerJoin(elementsInLinkedList1, elementsInLinkedList2));
     }
 
     public static LinkedList<CombinedElement> innerJoin(LinkedList<Element> elements1, LinkedList<Element> elements2) {
         LinkedList<CombinedElement> combinedElements = new LinkedList<>();
-        for (Element element1 : elements1) {
-            for (Element element2 : elements2)
-                if (element1.getId() == element2.getId()) {
+        ListIterator<Element> iterator1 = elements1.listIterator();
+        ListIterator<Element> iterator2 = elements2.listIterator();
+
+        Element element1 = iterator1.next();
+        Element element2 = iterator2.next();
+
+        while (true) {
+            try {
+                if (element1.getId() > element2.getId()) {
+                    element2 = iterator2.next();
+                } else if (element1.getId() < element2.getId()) {
+                    while (element2.getId() >= element1.getId()) {
+                        if (iterator2.hasPrevious()) {
+                            element2 = iterator2.previous();
+                        } else {
+                            break;
+                        }
+                    }
+                    element2 = iterator2.next();
+
+                    element1 = iterator1.next();
+                } else {
                     combinedElements.add(new CombinedElement(element1.getId(), element1.getValue(),
                             element2.getValue()));
+                    if (iterator2.hasNext()) {
+                        element2 = iterator2.next();
+                    } else {
+                        element1 = iterator1.next();
+                    }
+
                 }
+            } catch (NoSuchElementException e) {
+                break;
+            }
         }
         return combinedElements;
     }
@@ -83,19 +111,12 @@ public class Joiner {
     public static HashMap<Integer, List<List<String>>> innerJoin(Map<Integer, List<String>> elements1, Map<Integer,
             List<String>> elements2) {
         HashMap<Integer, List<List<String>>> combinedElements = new HashMap<>();
-        for(Map.Entry<Integer, List<String>> entry1 : elements1.entrySet()) {
-            for (Map.Entry<Integer, List<String>> entry2 : elements2.entrySet()) {
-                if (entry1.getKey().equals(entry2.getKey())) {
-                    List<List<String>> values = new ArrayList<>();
-                    values.add(entry1.getValue());
-                    values.add(entry2.getValue());
-
-                    if ((combinedElements.get(entry1.getKey())) == null) {
-                        combinedElements.put(entry1.getKey(), values);
-                    } else {
-                        combinedElements.get(entry1.getKey()).addAll(values);
-                    }
-                }
+        for (Map.Entry<Integer, List<String>> entry : elements1.entrySet()) {
+            if (elements2.get(entry.getKey()) != null) {
+                List<List<String>> values = new ArrayList<>();
+                values.add(entry.getValue());
+                values.add(elements2.get(entry.getKey()));
+                combinedElements.put(entry.getKey(), values);
             }
         }
         return combinedElements;
@@ -113,21 +134,8 @@ public class Joiner {
     }
 
     public static void passElements(ArrayList<Element> elementsInArrayList, LinkedList<Element> elementsInLinkedList) {
-        for (Element element : elementsInArrayList) {
-            if(elementsInLinkedList.isEmpty()) {
-                elementsInLinkedList.add(element);
-            } else if (elementsInLinkedList.get(0).compareTo(element) > 0){
-                elementsInLinkedList.add(0, element);
-            } else if (elementsInLinkedList.get(elementsInLinkedList.size() - 1).compareTo(element) < 0) {
-                elementsInLinkedList.add(elementsInLinkedList.size(), element);
-            } else {
-                int i = 1;
-                while (elementsInLinkedList.get(i).compareTo(element) < 0) {
-                    i++;
-                }
-                elementsInLinkedList.add(i, element);
-            }
-        }
+        elementsInLinkedList.addAll(elementsInArrayList);
+        Collections.sort(elementsInLinkedList);
     }
 
     public static void main(String[] args) {
